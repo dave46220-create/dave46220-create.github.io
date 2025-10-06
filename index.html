@@ -1,2 +1,551 @@
-<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'><title>David Daniels Homeschool Database</title><style>*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,sans-serif;background:#fafafa;color:#0a0a0a}</style>  <script type="module" crossorigin src="/assets/index-gxpcR-RT.js"></script>
-</head><body><div id='root'></div></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>David Daniels Homeschool Database</title>
+  <meta name="description" content="Find homeschool groups by U.S. state, plus national organizations and classical education resources." />
+  <style>
+    :root{--ink:#0a0a0a;--muted:#6b7280;--line:#e5e7eb;--bg:#fafafa;--link:#3730a3;--chip:#e5e7eb}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink)}
+    header{position:sticky;top:0;z-index:50;background:#fff;backdrop-filter:blur(6px);border-bottom:1px solid var(--line)}
+    .wrap{max-width:72rem;margin:0 auto;height:64px;padding:0 16px;display:flex;align-items:center;gap:.75rem}
+    .logo{height:36px;width:36px;border-radius:14px;background:linear-gradient(135deg,#6366F1,#0EA5E9,#10B981)}
+    .brand{font-weight:600;letter-spacing:-0.01em}
+    .container{max-width:72rem;margin:0 auto;padding:2rem 1rem}
+    .tabs{display:inline-flex;border:1px solid var(--line);border-radius:12px;background:#fff;overflow:hidden}
+    .tab{padding:.5rem 1rem;border:0;background:transparent;cursor:pointer}
+    .tab.active{background:#0a0a0a;color:#fff}
+    .card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px}
+    .grid{display:grid;gap:12px}
+    @media(min-width:640px){.grid.cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(min-width:1024px){.grid.cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}}
+    input,select,button{font:inherit}
+    .input,.select{width:100%;border:1px solid #d1d5db;border-radius:12px;padding:10px 12px;background:#fff}
+    .toolbar{display:grid;gap:10px}
+    @media(min-width:768px){.toolbar{grid-template-columns:2fr 1fr}}
+    a.card{display:block;text-decoration:none;color:inherit;transition:box-shadow .15s}
+    a.card:hover{box-shadow:0 4px 18px rgba(0,0,0,.06)}
+    .muted{color:var(--muted)}
+    .link{color:var(--link);word-break:break-all;font-size:.85rem}
+    .row{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center}
+    .chips{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.6rem}
+    .chip{font-size:.8rem;border:1px solid var(--chip);border-radius:999px;padding:.2rem .6rem;background:#fff;cursor:pointer}
+    .chip.active{background:#0a0a0a;color:#fff;border-color:#0a0a0a}
+    .az button{border:1px solid transparent;border-radius:8px;padding:.15rem .4rem}
+    .az button:hover{background:#f3f4f6}
+    footer{border-top:1px solid var(--line);background:#fff;color:#4b5563}
+    .hidden{display:none}
+    .help{font-size:.85rem;color:#374151}
+    .upload{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;justify-content:space-between;margin-top:.5rem}
+    .btn{border:1px solid #d1d5db;border-radius:10px;background:#fff;padding:.45rem .7rem;cursor:pointer}
+    .btn:hover{background:#f9fafb}
+    code{background:#f3f4f6;border:1px solid #e5e7eb;border-radius:6px;padding:0 .25rem}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <div class="logo"></div>
+      <div>
+        <div class="brand">David Daniels Homeschool Database</div>
+        <div class="muted" style="font-size:.85rem">Contact: ddaniels@rickettsgreatbookscollege.org</div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Tabs -->
+    <div class="tabs" role="tablist" aria-label="Browse">
+      <button class="tab active" id="tab-states" role="tab" aria-selected="true">By State</button>
+      <button class="tab" id="tab-orgs" role="tab" aria-selected="false">Organizations</button>
+      <button class="tab" id="tab-classical" role="tab" aria-selected="false">Classical</button>
+    </div>
+
+    <!-- STATES -->
+    <section id="panel-states" class="card" role="tabpanel" aria-labelledby="tab-states">
+      <h1>Find a Homeschool Group</h1>
+      <p class="muted" style="margin:.25rem 0 0">Search by name or filter by state. All 50 states included.</p>
+
+      <div class="toolbar" style="margin-top:14px">
+        <input id="q" class="input" placeholder="Search organizations (e.g., HEAV, THSC, Iowa)" />
+        <select id="state" class="select">
+          <option value="">All States</option>
+        </select>
+      </div>
+
+      <!-- Upload CSV -->
+      <div class="upload">
+        <div class="help">
+          <strong>Upload CSV</strong> (headers: <code>State, Name, URL, Tags</code>).
+          <a href="sandbox:/mnt/data/homeschool_directory_template.csv" download>Download template</a>
+        </div>
+        <div class="row">
+          <label class="btn">
+            Choose CSV…
+            <input id="csvFile" type="file" accept=".csv,text/csv" style="display:none" />
+          </label>
+          <label class="row" style="gap:.35rem">
+            <input id="appendMode" type="checkbox" />
+            <span class="muted">Append (unchecked = replace)</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- A–Z jump -->
+      <div class="row az muted" style="margin-top:10px;font-size:.85rem">
+        <button id="resetBtn" title="Reset">Reset</button>
+      </div>
+
+      <!-- Results -->
+      <div id="results" class="grid cols-2 cols-3" style="margin-top:16px"></div>
+      <p id="empty" class="muted hidden" style="margin-top:20px">No matches. Try another search or state.</p>
+    </section>
+
+    <!-- ORGS -->
+    <section id="panel-orgs" class="card hidden" role="tabpanel" aria-labelledby="tab-orgs">
+      <h2>National Organizations</h2>
+      <p class="muted" style="margin:.25rem 0 0">Search or filter organizations that serve families nationally.</p>
+
+      <div class="toolbar" style="margin-top:14px">
+        <input id="org-q" class="input" placeholder="Search organizations (e.g., HSLDA, NHERI, HS4CC)" />
+        <div class="row" id="org-chips"></div>
+      </div>
+
+      <div id="org-results" class="grid cols-2 cols-3" style="margin-top:16px"></div>
+      <p id="org-empty" class="muted hidden" style="margin-top:20px">No matches. Try another search or clear filters.</p>
+    </section>
+
+    <!-- CLASSICAL -->
+    <section id="panel-classical" class="card hidden" role="tabpanel" aria-labelledby="tab-classical">
+      <h2>Classical Education Groups</h2>
+      <p class="muted" style="margin:.25rem 0 0">Search or filter classical orgs, school networks, and publishers.</p>
+
+      <div class="toolbar" style="margin-top:14px">
+        <input id="class-q" class="input" placeholder="Search (e.g., Classical Conversations, Great Hearts, Hillsdale)" />
+        <div class="row" id="class-chips"></div>
+      </div>
+
+      <div id="class-results" class="grid cols-2 cols-3" style="margin-top:16px"></div>
+      <p id="class-empty" class="muted hidden" style="margin-top:20px">No matches. Try another search or clear filters.</p>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container" style="display:flex;justify-content:space-between;align-items:center;gap:.75rem">
+      <div>© <span id="year"></span> David Daniels Homeschool Database. All rights reserved.</div>
+    </div>
+  </footer>
+
+  <script>
+    // ---------- DATA ----------
+    let STATES = [
+      { state: "Alabama", name: "Homeschool Alabama", url: "https://www.homeschoolalabama.org" },
+      { state: "Alaska", name: "Alaska Private and Home Educators Association", url: "https://aphea.org" },
+      { state: "Arizona", name: "Arizona Families for Home Education", url: "https://afhe.org" },
+      { state: "Arkansas", name: "The Education Alliance", url: "https://arkansashomeschool.org" },
+
+      { state: "California", name: "Christian Home Educators Association of CA", url: "https://www.cheaofca.org" },
+      { state: "California", name: "California Homeschool Network", url: "https://www.californiahomeschool.net" },
+      { state: "California", name: "Homeschool Association of California", url: "https://www.hsc.org" },
+
+      { state: "Colorado", name: "Christian Home Educators of Colorado", url: "https://chec.org" },
+      { state: "Connecticut", name: "TEACH Connecticut", url: "https://www.teachct.org" },
+      { state: "Delaware", name: "Delaware Home Educators Association", url: "https://www.dhea.org" },
+      { state: "Florida", name: "Florida Parent Educators Association", url: "https://fpea.com" },
+      { state: "Georgia", name: "Georgia Home Education Association", url: "https://ghea.org" },
+      { state: "Hawaii", name: "Christian Homeschoolers of Hawaii", url: "https://www.christianhomeschoolersofhawaii.org" },
+      { state: "Idaho", name: "Homeschool Idaho", url: "https://homeschoolidaho.org" },
+      { state: "Illinois", name: "Illinois Christian Home Educators", url: "https://iche.org" },
+
+      { state: "Indiana", name: "The Indiana Association of Home Educators", url: "https://iahe.net" },
+      { state: "Indiana", name: "Indiana Foundation for Homeschooling", url: "https://www.indianahomeschooling.org" },
+
+      { state: "Iowa", name: "Homeschool Iowa", url: "https://homeschooliowa.org" },
+
+      { state: "Kansas", name: "Christian Home Educators Confederation of Kansas", url: "https://kansashomeschool.org" },
+      { state: "Kansas", name: "Kansas Home Educators", url: "https://www.kshomeeducators.com" },
+      { state: "Kansas", name: "Midwest Parent Educators", url: "https://midwesthomeschoolers.org" },
+
+      { state: "Kentucky", name: "Christian Home Educators of Kentucky", url: "https://www.facebook.com" },
+
+      { state: "Louisiana", name: "Homeschool Louisiana", url: "https://www.homeschoollouisiana.org" },
+      { state: "Maine", name: "Homeschoolers of Maine", url: "https://www.homeschoolersofmaine.org" },
+
+      { state: "Maryland", name: "Maryland Association of Christian Home Educators", url: "https://machemd.org" },
+      { state: "Maryland", name: "Maryland Catholic Resources", url: "https://marylandarch.com" },
+
+      { state: "Massachusetts", name: "MassHOPE – Massachusetts Homeschool Organization of Parent Educators", url: "https://masshope.org" },
+      { state: "Massachusetts", name: "Massachusetts Home Learning Association", url: "https://www.mhla.org" },
+
+      { state: "Michigan", name: "Michigan Christian Homeschool Network", url: "https://www.michn.org" },
+      { state: "Minnesota", name: "MÂCHÉ – Minnesota Association of Christian Home Educators", url: "https://mache.org" },
+      { state: "Mississippi", name: "Mississippi Home Educators Association", url: "https://www.mhea.net" },
+
+      { state: "Missouri", name: "Families for Home Education Missouri", url: "https://fhe-mo.org" },
+      { state: "Missouri", name: "Missouri Association of Teaching Christian Homes", url: "https://www.match-inc.org" },
+      { state: "Missouri", name: "Midwest Parent Educators", url: "https://midwesthomeschoolers.org" },
+
+      { state: "Montana", name: "Montanans Assembling Together for Christian Home Education", url: "https://www.matcheonline.com" },
+      { state: "Montana", name: "Montana Coalition of Home Educators", url: "https://www.mtche.org" },
+
+      { state: "Nebraska", name: "Nebraska Christian Home Educators Association", url: "https://nchea.org" },
+      { state: "Nebraska", name: "Nebraska Homeschool", url: "https://www.nebraskahomeschool.org" },
+
+      { state: "Nevada", name: "Nevada Homeschool Network", url: "https://nevadahomeschoolnetwork.com" },
+      { state: "New Hampshire", name: "Granite State Home Educators", url: "https://granitestatehomeeducators.org" },
+      { state: "New Jersey", name: "New Jersey Homeschool Association", url: "https://newjerseyhomeschool.wordpress.com" },
+      { state: "New Mexico", name: "CAPE – Christian Association of Parent Educators of New Mexico", url: "https://www.cape-nm.org" },
+      { state: "New York", name: "Homeschool New York", url: "https://www.leah.org" },
+
+      { state: "North Carolina", name: "NCHE – North Carolinians for Home Education", url: "https://www.nche.com" },
+      { state: "North Dakota", name: "North Dakota Home School Association", url: "https://www.ndhsa.org" },
+
+      { state: "Ohio", name: "Christian Home Educators of Ohio", url: "https://www.cheohome.org" },
+      { state: "Oklahoma", name: "Homeschool Oklahoma", url: "https://www.homeschooloklahoma.org" },
+      { state: "Oregon", name: "OCEANetwork – Oregon Christian Home Education Association Network", url: "https://www.oceanetwork.org" },
+
+      { state: "Pennsylvania", name: "CHAP – Christian Homeschool Association of Pennsylvania", url: "https://chaponline.com" },
+
+      { state: "Rhode Island", name: "RIGHT – Rhode Island Guild of Home Teachers", url: "https://www.rihomeschool.com" },
+      { state: "Rhode Island", name: "ENRICHri – A Rhode Island Home Education Community", url: "https://enrichri.org" },
+
+      { state: "South Carolina", name: "South Carolina Association of Independent Home Schools", url: "https://schomeschooling.com" },
+      { state: "South Carolina", name: "South Carolina Home Educators Association", url: "https://schea.net" },
+
+      { state: "South Dakota", name: "South Dakota Christian Home Educators", url: "https://www.facebook.com" },
+
+      { state: "Tennessee", name: "Memphis-Area Home Education Association", url: "https://www.mymhea.org" },
+      { state: "Tennessee", name: "THEA-ME – Tennessee Home Education Association – Mid-East Chapter", url: "https://mideastthea.com" },
+      { state: "Tennessee", name: "Tennessee Home Education Association", url: "https://www.tnhea.org" },
+
+      { state: "Texas", name: "Homeschool Association of the Lone Star State", url: "https://halss.org" },
+      { state: "Texas", name: "THE – Texas Home Educators", url: "https://texashomeeducators.org" },
+      { state: "Texas", name: "North Texas Home Educators Network", url: "https://nthen.org" },
+      { state: "Texas", name: "THSC – Texas Home School Coalition", url: "https://thsc.org" },
+      { state: "Texas", name: "Greater Houston Area Home Educators", url: "https://www.g-hah.org" },
+
+      { state: "Utah", name: "UTCH (You Teach) – Utah Christian Homeschool Association", url: "https://www.utch.org" },
+      { state: "Vermont", name: "Homeschooling Vermont", url: "https://www.facebook.com" },
+
+      { state: "Virginia", name: "HEAV – Home Educators Association of Virginia", url: "https://heav.org" },
+      { state: "Virginia", name: "HEAV – VA Support Group Leaders Help", url: "https://heav.org" },
+      { state: "Virginia", name: "VaHomeschoolers – The Organization of Virginia Homeschoolers", url: "https://vahomeschoolers.org" },
+
+      { state: "Washington", name: "Christian Heritage Home Educators of Washington", url: "https://christianheritagewa.org" },
+      { state: "Washington", name: "WHO – Washington Homeschool Organization", url: "https://washhomeschool.org" },
+
+      { state: "West Virginia", name: "Christian Home Educators of West Virginia", url: "https://chewv.org" },
+      { state: "West Virginia", name: "West Virginia Home Educators Association", url: "https://www.wvhea.org" },
+
+      { state: "Wisconsin", name: "Wisconsin Homeschool Association", url: "https://wihomeschool.org" },
+      { state: "Wyoming", name: "Homeschooling of Wyoming", url: "https://homeschoolwy.org" },
+    ];
+
+    const ORGS = [
+      { name: "Home School Legal Defense Association (HSLDA)", url: "https://hslda.org", blurb: "Nationwide legal defense and advocacy for homeschool freedom; member services, legal protection, resources.", tags: ["Advocacy","Legal","National"] },
+      { name: "Homeschool.com", url: "https://www.homeschool.com", blurb: "Long-running portal with resources, printables, curriculum guides, and community articles for homeschool families.", tags: ["Resource Hub","Community","National"] },
+      { name: "Homeschooling for College Credit (HS4CC)", url: "https://homeschoolingforcollegecredit.org", blurb: "Nonprofit helping families earn college credit in high school and reduce college costs; national community groups.", tags: ["College Credit","Nonprofit","National"] },
+      { name: "National Home Education Research Institute (NHERI)", url: "https://nheri.org", blurb: "Research institute collecting and publishing homeschool data, studies, and fast facts.", tags: ["Research","Nonprofit","National"] },
+      { name: "National Black Home Educators (NBHE)", url: "https://www.nbhe.net", blurb: "Nationwide membership org empowering Black homeschool families with resources and support.", tags: ["Community","Affinity","National"] },
+      { name: "Coalition for Responsible Home Education (CRHE)", url: "https://responsiblehomeschooling.org", blurb: "Advocacy nonprofit focused on homeschooled children's rights, research, and policy resources.", tags: ["Advocacy","Policy","National"] },
+    ];
+
+    const CLASSICAL = [
+      { name: "Classical Conversations", url: "https://classicalconversations.com/", blurb: "Christ-centered homeschool communities and curriculum built on the classical model.", tags: ["Homeschool","Community","Christian","Classical"] },
+      { name: "Great Hearts Academies", url: "https://www.greatheartsamerica.org/", blurb: "Network of tuition-free public charters and private academies delivering classical K–12 education.", tags: ["Charter Network","Schools","Classical"] },
+      { name: "Hillsdale College – Barney Charter School Initiative (BCSI)", url: "https://k12.hillsdale.edu/Schools/BCSI/", blurb: "Initiative supporting the launch and growth of classical K–12 charter schools.", tags: ["K-12 Initiative","Curriculum","Schools","Classical"] },
+      { name: "Association of Classical Christian Schools (ACCS)", url: "https://classicalchristian.org/", blurb: "Membership and accreditation body serving classical Christian schools; school finder and support.", tags: ["Association","Accreditation","Christian","Classical"] },
+      { name: "Memoria Press", url: "https://www.memoriapress.com/", blurb: "Publisher of classical Christian curriculum (Latin, logic, literature, etc.).", tags: ["Publisher","Curriculum","Christian","Classical"] },
+      { name: "Veritas Press", url: "https://veritaspress.com/", blurb: "Classical Christian curriculum and online courses; history cards, Omnibus, live online school options.", tags: ["Publisher","Online School","Curriculum","Christian","Classical"] },
+      { name: "Classical Academic Press", url: "https://classicalacademicpress.com/", blurb: "Publisher and training provider offering classical curricula and teacher development.", tags: ["Publisher","Curriculum","Training","Classical"] },
+      { name: "Scholé Academy (by Classical Academic Press)", url: "https://scholeacademy.com/", blurb: "Online classical Christian academy offering live K–12 courses aligned to restful learning.", tags: ["Online School","Christian","Classical"] },
+      { name: "Well-Trained Mind Academy (WTMA)", url: "https://www.wtmacademy.com/", blurb: "Online classical courses founded by Susan Wise Bauer.", tags: ["Online School","Classical"] },
+      { name: "The CiRCE Institute", url: "https://circeinstitute.org/", blurb: "Nonprofit providing classical education training, conferences, and resources.", tags: ["Institute","Training","Classical"] },
+      { name: "Ambleside Schools International", url: "https://amblesideschools.org/", blurb: "Network supporting schools implementing Charlotte Mason’s tradition.", tags: ["Network","Charlotte Mason","Classical"] },
+      { name: "Kolbe Academy", url: "https://kolbe.org/", blurb: "Classical Catholic homeschool and online academy offering flexible K–12 programs.", tags: ["Catholic","Online School","Homeschool","Accredited","Classical"] },
+      { name: "Mother of Divine Grace School (MODG)", url: "https://modg.org/", blurb: "Distance education program providing classical Catholic curricula and advisory services.", tags: ["Catholic","Homeschool","Online School","Classical"] },
+      { name: "Angelicum Academy", url: "https://www.angelicum.net/", blurb: "Classical Catholic homeschool academy known for its Great Books program and online classes.", tags: ["Catholic","Great Books","Online School","Classical"] },
+      { name: "Seton Home Study School", url: "https://www.setonhome.org/", blurb: "Large Catholic homeschool program with classical flavor; accredited.", tags: ["Catholic","Homeschool","Accredited","Classical"] },
+      { name: "Our Lady of the Rosary School (OLRS)", url: "https://www.olrs.com/", blurb: "Long-established Catholic homeschool academy offering full K–12 curricula and support.", tags: ["Catholic","Homeschool","Online School","Classical"] },
+      { name: "Classic Learning Test (CLT)", url: "https://www.cltexam.com/", blurb: "Standardized assessments emphasizing the liberal arts; accepted by many classical-friendly colleges.", tags: ["Assessment/Test","Great Books","College","Classical"] },
+      { name: "Hillsdale K–12 Member & Curriculum Schools", url: "https://k12.hillsdale.edu/Schools/", blurb: "Directory/map of Hillsdale-affiliated classical charter and curriculum schools across the U.S.", tags: ["Map/Directory","Charter Network","K-12","Classical"] },
+      { name: "St. John’s College (Annapolis/Santa Fe)", url: "https://www.sjc.edu/", blurb: "Great Books colleges centered on seminar discussions of classic texts.", tags: ["College","Great Books","Classical"] },
+      { name: "Thomas Aquinas College (CA/MA)", url: "https://www.thomasaquinas.edu/", blurb: "Catholic Great Books college with Socratic seminar pedagogy.", tags: ["College","Great Books","Catholic","Classical"] },
+      { name: "Gutenberg College", url: "https://gutenberg.edu/", blurb: "Great Books liberal arts college in Eugene, Oregon, with seminar-based curriculum.", tags: ["College","Great Books","Classical"] },
+      { name: "Charlotte Mason Institute (CMI)", url: "https://www.cminstitute.org/", blurb: "Global nonprofit supporting Mason’s educational philosophy with training and research.", tags: ["Charlotte Mason","Institute","Training","Classical"] },
+      { name: "Simply Charlotte Mason", url: "https://simplycharlottemason.com/", blurb: "Curriculum, guides, and community resources for implementing Charlotte Mason.", tags: ["Charlotte Mason","Publisher","Curriculum","Homeschool","Classical"] },
+      { name: "AmblesideOnline", url: "https://amblesideonline.org/", blurb: "Free, high-quality Charlotte Mason curriculum and schedules maintained by volunteers.", tags: ["Charlotte Mason","Curriculum","Free","Homeschool","Classical"] },
+    ];
+
+    // ---------- UTIL ----------
+    const $ = sel => document.querySelector(sel);
+    const $$ = sel => Array.from(document.querySelectorAll(sel));
+    $("#year").textContent = new Date().getFullYear();
+
+    // ---------- TABS ----------
+    function showPanel(targetId) {
+      $$(".tab").forEach(b => b.classList.remove("active"));
+      $(`#tab-${targetId}`).classList.add("active");
+      $$("main section[role='tabpanel']").forEach(s => s.classList.add("hidden"));
+      $(`#panel-${targetId}`).classList.remove("hidden");
+    }
+    $("#tab-states").addEventListener("click", ()=>showPanel("states"));
+    $("#tab-orgs").addEventListener("click", ()=>showPanel("orgs"));
+    $("#tab-classical").addEventListener("click", ()=>showPanel("classical"));
+
+    // ---------- STATES PANEL ----------
+    const $q = $("#q");
+    const $state = $("#state");
+    const $results = $("#results");
+    const $empty = $("#empty");
+    const $resetBtn = $("#resetBtn");
+    const $csvFile = $("#csvFile");
+    const $appendMode = $("#appendMode");
+
+    // build states select
+    function rebuildStateOptions() {
+      const cur = $state.value;
+      $state.querySelectorAll("option:not([value=''])").forEach(o => o.remove());
+      const STATE_LIST = [...new Set(STATES.map(d => d.state))].sort((a,b)=>a.localeCompare(b));
+      for (const s of STATE_LIST) {
+        const opt = document.createElement("option");
+        opt.value = s; opt.textContent = s;
+        $state.appendChild(opt);
+      }
+      if ([...$state.options].some(o => o.value === cur)) $state.value = cur;
+    }
+    rebuildStateOptions();
+
+    // A–Z jump
+    (function buildAZ(){
+      const row = document.querySelector(".row.az");
+      const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+      for (const ch of letters) {
+        const b = document.createElement("button");
+        b.textContent = ch;
+        b.addEventListener("click", () => {
+          const STATE_LIST = [...new Set(STATES.map(d => d.state))].sort((a,b)=>a.localeCompare(b));
+          const match = STATE_LIST.find(s => s.startsWith(ch));
+          if (match) { $state.value = match; renderStates(); }
+        });
+        row.insertBefore(b, $resetBtn);
+      }
+    })();
+
+    function renderStates() {
+      const needle = ($q.value || "").trim().toLowerCase();
+      const pick = $state.value;
+      const list = STATES.filter(r =>
+        (!pick || r.state === pick) &&
+        (!needle || r.name.toLowerCase().includes(needle) || r.state.toLowerCase().includes(needle))
+      );
+
+      $results.innerHTML = "";
+      if (!list.length) { $empty.classList.remove("hidden"); return; }
+      $empty.classList.add("hidden");
+
+      for (const r of list) {
+        const a = document.createElement("a");
+        a.className = "card";
+        a.href = r.url; a.target = "_blank"; a.rel = "noopener noreferrer";
+        a.innerHTML = `
+          <p class="muted" style="font-size:.8rem">${r.state}</p>
+          <div style="font-weight:600;line-height:1.2;margin-top:.15rem">${r.name}</div>
+          <div class="link" style="margin-top:.3rem">${r.url}</div>
+        `;
+        $results.appendChild(a);
+      }
+    }
+    $q.addEventListener("input", renderStates);
+    $state.addEventListener("change", renderStates);
+    $resetBtn.addEventListener("click", ()=>{ $state.value=""; $q.value=""; renderStates(); });
+    renderStates();
+
+    // --- CSV parsing (RFC4180-ish: quotes, commas, CR/LF) ---
+    function parseCSV(text) {
+      const rows = [];
+      let row = [], cur = "", q = false;
+      for (let i = 0; i < text.length; i++) {
+        const c = text[i];
+        if (q) {
+          if (c === '"') {
+            if (text[i+1] === '"') { cur += '"'; i++; }
+            else { q = false; }
+          } else cur += c;
+        } else {
+          if (c === '"') q = true;
+          else if (c === ',') { row.push(cur); cur = ""; }
+          else if (c === '\n') { row.push(cur); rows.push(row); row = []; cur = ""; }
+          else if (c === '\r') { /* ignore CR */ }
+          else cur += c;
+        }
+      }
+      row.push(cur); rows.push(row);
+      return rows;
+    }
+
+    function handleCSV(file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const text = String(e.target?.result || "");
+          const rows = parseCSV(text).filter(r => r.some(x => String(x||"").trim() !== ""));
+          if (!rows.length) throw new Error("Empty CSV.");
+          const header = rows[0].map(h => String(h||"").trim().toLowerCase());
+          const iState = header.indexOf("state");
+          const iName  = header.indexOf("name");
+          const iURL   = header.indexOf("url");
+          const iTags  = header.indexOf("tags");
+          if (iState < 0 || iName < 0 || iURL < 0) {
+            throw new Error("CSV must have headers: State, Name, URL (Tags optional).");
+          }
+          const items = rows.slice(1).map(r => ({
+            state: r[iState] || "",
+            name:  r[iName]  || "",
+            url:   r[iURL]   || "",
+            tags: (r[iTags] || "").split(/;|,|\|/).map(x => x.trim()).filter(Boolean),
+          })).filter(o => o.state && o.name && o.url);
+
+          if (!items.length) throw new Error("No valid rows found.");
+
+          if ($appendMode.checked) {
+            STATES = STATES.concat(items);
+          } else {
+            STATES = items;
+          }
+          rebuildStateOptions();
+          renderStates();
+          alert(`Loaded ${items.length} entries${$appendMode.checked ? " (appended)" : ""}.`);
+        } catch (err) {
+          alert("CSV error: " + (err?.message || String(err)));
+        }
+      };
+      reader.readAsText(file);
+    }
+    $csvFile.addEventListener("change", (e) => {
+      const f = e.target.files && e.target.files[0];
+      if (f) handleCSV(f);
+      e.target.value = "";
+    });
+
+    // ---------- ORGS PANEL ----------
+    const $orgQ = $("#org-q");
+    const $orgChips = $("#org-chips");
+    const $orgResults = $("#org-results");
+    const $orgEmpty = $("#org-empty");
+    let orgActive = new Set();
+
+    const ORG_TAGS = Array.from(new Set(ORGS.flatMap(o => o.tags))).sort();
+    function renderOrgChips() {
+      $orgChips.innerHTML = "";
+      for (const t of ORG_TAGS) {
+        const b = document.createElement("button");
+        b.className = "chip" + (orgActive.has(t) ? " active" : "");
+        b.textContent = t;
+        b.addEventListener("click", () => { 
+          orgActive.has(t) ? orgActive.delete(t) : orgActive.add(t);
+          renderOrgChips(); renderOrgs();
+        });
+        $orgChips.appendChild(b);
+      }
+      if (ORG_TAGS.length) {
+        const clr = document.createElement("button");
+        clr.className = "chip";
+        clr.textContent = "Clear";
+        clr.addEventListener("click", ()=>{ orgActive.clear(); renderOrgChips(); renderOrgs(); });
+        $orgChips.appendChild(clr);
+      }
+    }
+    function renderOrgs() {
+      const needle = ($orgQ.value||"").trim().toLowerCase();
+      const list = ORGS.filter(o =>
+        (!needle || o.name.toLowerCase().includes(needle) || (o.blurb||"").toLowerCase().includes(needle)) &&
+        (orgActive.size === 0 || Array.from(orgActive).every(t => o.tags.includes(t)))
+      );
+
+      $orgResults.innerHTML = "";
+      if (!list.length) { $orgEmpty.classList.remove("hidden"); return; }
+      $orgEmpty.classList.add("hidden");
+
+      for (const o of list) {
+        const a = document.createElement("a");
+        a.className = "card";
+        a.href = o.url; a.target = "_blank"; a.rel = "noopener noreferrer";
+        a.innerHTML = `
+          <p class="muted" style="font-size:.8rem">National</p>
+          <div style="font-weight:600;line-height:1.2;margin-top:.15rem">${o.name}</div>
+          <div class="link" style="margin-top:.3rem">${o.url}</div>
+          <p class="muted" style="margin-top:.4rem;font-size:.9rem;line-height:1.45">${o.blurb||""}</p>
+          <div class="chips" style="margin-top:.4rem">
+            ${o.tags.map(t=>`<span class="chip" style="pointer-events:none">${t}</span>`).join("")}
+          </div>
+        `;
+        $orgResults.appendChild(a);
+      }
+    }
+    $orgQ.addEventListener("input", renderOrgs);
+    renderOrgChips(); renderOrgs();
+
+    // ---------- CLASSICAL PANEL ----------
+    const $classQ = $("#class-q");
+    const $classChips = $("#class-chips");
+    const $classResults = $("#class-results");
+    const $classEmpty = $("#class-empty");
+    let classActive = new Set();
+
+    const CLASS_TAGS = Array.from(new Set(CLASSICAL.flatMap(o => o.tags))).sort();
+    function renderClassChips() {
+      $classChips.innerHTML = "";
+      for (const t of CLASS_TAGS) {
+        const b = document.createElement("button");
+        b.className = "chip" + (classActive.has(t) ? " active" : "");
+        b.textContent = t;
+        b.addEventListener("click", () => { 
+          classActive.has(t) ? classActive.delete(t) : classActive.add(t);
+          renderClassChips(); renderClassical();
+        });
+        $classChips.appendChild(b);
+      }
+      if (CLASS_TAGS.length) {
+        const clr = document.createElement("button");
+        clr.className = "chip";
+        clr.textContent = "Clear";
+        clr.addEventListener("click", ()=>{ classActive.clear(); renderClassChips(); renderClassical(); });
+        $classChips.appendChild(clr);
+      }
+    }
+    function renderClassical() {
+      const needle = ($classQ.value||"").trim().toLowerCase();
+      const list = CLASSICAL.filter(o =>
+        (!needle || o.name.toLowerCase().includes(needle) || (o.blurb||"").toLowerCase().includes(needle)) &&
+        (classActive.size === 0 || Array.from(classActive).every(t => o.tags.includes(t)))
+      );
+
+      $classResults.innerHTML = "";
+      if (!list.length) { $classEmpty.classList.remove("hidden"); return; }
+      $classEmpty.classList.add("hidden");
+
+      for (const o of list) {
+        const a = document.createElement("a");
+        a.className = "card";
+        a.href = o.url; a.target = "_blank"; a.rel = "noopener noreferrer";
+        a.innerHTML = `
+          <p class="muted" style="font-size:.8rem">Classical</p>
+          <div style="font-weight:600;line-height:1.2;margin-top:.15rem">${o.name}</div>
+          <div class="link" style="margin-top:.3rem">${o.url}</div>
+          <p class="muted" style="margin-top:.4rem;font-size:.9rem;line-height:1.45">${o.blurb||""}</p>
+          <div class="chips" style="margin-top:.4rem">
+            ${o.tags.map(t=>`<span class="chip" style="pointer-events:none">${t}</span>`).join("")}
+          </div>
+        `;
+        $classResults.appendChild(a);
+      }
+    }
+    $classQ.addEventListener("input", renderClassical);
+    renderClassChips(); renderClassical();
+  </script>
+</body>
+</html>
+
